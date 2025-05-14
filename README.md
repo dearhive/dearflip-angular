@@ -255,4 +255,4 @@ Make sure to adhere to the DearFlip license terms when using their library in yo
 ## Additional Resources
 
 - [DearFlip Official Documentation](https://js.dearflip.com/docs/)
-- [DearFlip Demo Examples](https://js.dearflip.com/examples/)
+- [DearFlip Demo Examples](https://js.dearflip.com/flipbook-examples/)
