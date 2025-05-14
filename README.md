@@ -1,59 +1,258 @@
-# DearflipAngular
+# DearFlip PDF Viewer Angular Integration
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.11.
+This project demonstrates how to integrate the DearFlip PDF viewer into an Angular application.
 
-## Development server
+## Prerequisites
 
-To start a local development server, run:
+- Angular 19.x+
+- DearFlip PDF viewer library (JS & CSS)
+- A PDF file to display
 
-```bash
-ng serve
-```
+## Installation
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+1. Create a new Angular project or use an existing one:
+   ```bash
+   ng new my-dearflip-app
+   cd my-dearflip-app
+   ```
 
-## Code scaffolding
+2. Create a `public` folder in the root of your project and add the following structure:
+   ```
+   public/
+   ├── dflip/
+   │   ├── css/
+   │   │   └── dflip.css
+   │   ├── js/
+   │   │   ├── libs/
+   │   │   │   └── jquery.min.js
+   │   │   └── dflip.js
+   │   ├── images/
+   │   └── sound/
+   └── pdf/
+       └── your-pdf-file.pdf
+   ```
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+3. Download the DearFlip library from the official source and place the files in the `public/dflip/` directory.
 
-```bash
-ng generate component component-name
-```
+4. Update your `angular.json` to include the public assets:
+   ```json
+   "assets": [
+     {
+       "glob": "**/*",
+       "input": "public"
+     }
+   ]
+   ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+5. Include DearFlip CSS and JavaScript files in your `index.html`:
+   ```html
+   <head>
+     <!-- Other head elements -->
+     <link rel="stylesheet" href="dflip/css/dflip.css">
+   </head>
+   <body>
+     <!-- App root -->
+     <script src="dflip/js/libs/jquery.min.js"></script>
+     <script src="dflip/js/dflip.js"></script>
+   </body>
+   ```
 
-```bash
-ng generate --help
-```
+## Creating the DearFlip Viewer Component
 
-## Building
+1. Generate a new component:
+   ```bash
+   ng generate component dearflip-viewer
+   ```
 
-To build the project run:
+2. Create the component template (`dearflip-viewer.component.html`):
+   ```html
+   <div id="my-dflip-viewer"></div>
+   ```
 
-```bash
-ng build
-```
+3. Add styles to the component (`dearflip-viewer.component.css`):
+   ```css
+   :host {
+     display: block;
+     width: 100%;
+   }
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+   #my-dflip-viewer {
+     width: 100%;
+     height: 100%;
+     min-height: 500px;
+   }
+   ```
 
-## Running unit tests
+4. Implement the component with TypeScript typings (`dearflip-viewer.component.ts`):
+   ```typescript
+   import { Component, Input, OnInit } from '@angular/core';
+   import JQueryStatic from 'jquery';
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+   // Define types for DEARFLIP global object
+   declare global {
+     interface Window {
+       DEARFLIP: {
+         jQuery: JQueryStatic;
+       }
+     }
+     
+     interface JQuery {
+       flipBook(source: string, options?: DearFlipOptions): any;
+     }
+   }
 
-```bash
-ng test
-```
+   // Define DearFlip options interface
+   export interface DearFlipOptions {
+     // Core settings
+     source: string;
+     height?: number;
+     width?: number;
+     duration?: number;
+     webgl?: boolean;
+     
+     // UI options
+     autoEnableOutline?: boolean;
+     autoEnableThumbnail?: boolean;
+     backgroundColor?: string;
+     paddingTop?: number;
+     paddingBottom?: number;
+     paddingLeft?: number;
+     paddingRight?: number;
+     
+     // Controls
+     moreControls?: ('download' | 'pageMode' | 'startPage' | 'endPage' | 'sound')[];
+     hideControls?: ('thumbnail' | 'outline' | 'startPage' | 'endPage' | 'pageNumber')[];
+     
+     // Behavior
+     autoPlay?: boolean;
+     autoPlayDuration?: number;
+     autoPlayStart?: boolean;
+     
+     // Additional options
+     transparent?: boolean;
+     hard?: string | boolean;
+     overwritePDFOutline?: boolean;
+     enableDownload?: boolean;
+     enableAnnotation?: boolean;
+     enableNavigation?: boolean;
+     
+     // Callbacks
+     onFlip?: (flipbook: any) => void;
+     onReady?: (flipbook: any) => void;
+   }
 
-## Running end-to-end tests
+   // Define FlipBook object returned by the flipBook method
+   export interface FlipBook {
+     dispose(): void;
+   }
 
-For end-to-end (e2e) testing, run:
+   @Component({
+     selector: 'app-dearflip-viewer',
+     standalone: true,
+     imports: [],
+     templateUrl: './dearflip-viewer.component.html',
+     styleUrl: './dearflip-viewer.component.css'
+   })
+   export class DearflipViewerComponent implements OnInit {
+     @Input() options: DearFlipOptions = { source: '/pdf/the-three-muskeeteers.pdf' };
 
-```bash
-ng e2e
-```
+     constructor() {}
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+     ngOnInit() {
+       setTimeout(() => {
+         window.DEARFLIP.jQuery('#my-dflip-viewer').flipBook(this.options.source, this.options);
+       }, 100);
+     }
+   }
+   ```
+
+## Using the DearFlip Viewer Component
+
+In your main component:
+
+1. Import the DearflipViewerComponent and DearFlipOptions:
+   ```typescript
+   import { Component } from '@angular/core';
+   import { RouterOutlet } from '@angular/router';
+   import { DearflipViewerComponent, DearFlipOptions } from "./dearflip-viewer/dearflip-viewer.component";
+
+   @Component({
+     selector: 'app-root',
+     standalone: true,
+     imports: [RouterOutlet, DearflipViewerComponent],
+     templateUrl: './app.component.html',
+     styleUrl: './app.component.css'
+   })
+   export class AppComponent {
+     title = 'dearflip-angular';
+     
+     /**
+      * For more options, refer to the doc https://js.dearflip.com/docs/ 
+      */
+     dflipOptions: DearFlipOptions = {
+       source: '/pdf/the-three-musketeers.pdf',
+       height: 800,
+       webgl: true,
+       autoEnableOutline: false,
+       autoEnableThumbnail: false,
+       backgroundColor: '#FFFFFF',
+       paddingTop: 30,
+       paddingBottom: 30
+     };
+   }
+   ```
+
+2. Use the component in your template:
+   ```html
+   <main class="main">
+     <h1 class="title">{{title}}</h1>
+     <app-dearflip-viewer [options]="dflipOptions"></app-dearflip-viewer>
+   </main>
+   ```
+
+## Configuration Options
+
+The DearFlip viewer supports numerous configuration options. Here are some of the most commonly used:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| source | string | null | Path to the PDF file |
+| height | number | null | Height of the viewer |
+| width | number | null | Width of the viewer |
+| webgl | boolean | true | Whether to use WebGL rendering |
+| autoEnableOutline | boolean | false | Auto enable document outline |
+| autoEnableThumbnail | boolean | false | Auto enable thumbnails |
+| backgroundColor | string | '#FFFFFF' | Background color of the viewer |
+| paddingTop | number | 0 | Top padding in pixels |
+| paddingBottom | number | 0 | Bottom padding in pixels |
+
+For a complete list of options, refer to the [DearFlip documentation](https://js.dearflip.com/docs/).
+
+## Troubleshooting
+
+### Common Issues
+
+1. **PDF not loading**
+   - Ensure the PDF path is correct and the file exists in the specified location
+   - Check for console errors related to CORS issues
+
+2. **DearFlip not initializing**
+   - Verify that all the required DearFlip files are correctly included in the project
+   - Check if the jQuery library is loaded before the DearFlip script
+
+3. **Styling issues**
+   - Make sure the DearFlip CSS file is correctly included
+   - Check if your custom CSS is conflicting with DearFlip's styles
+
+### Browser Compatibility
+
+DearFlip works best on modern browsers that support WebGL. For older browsers, it automatically falls back to CSS 3D transformations.
+
+## License
+
+Make sure to adhere to the DearFlip license terms when using their library in your project.
 
 ## Additional Resources
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [DearFlip Official Documentation](https://js.dearflip.com/docs/)
+- [DearFlip Demo Examples](https://js.dearflip.com/examples/)
